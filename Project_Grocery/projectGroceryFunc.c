@@ -75,7 +75,6 @@ void addToTail(struct list* list, struct client* newClient) {
 /*Function to read any input, from the file or user, using the exact amount of memory that needed*/
 char* readInput(FILE* fp) {
 
-	fflush(stdin);    
 
 	char* input = NULL, * temp;    //Input will store the final sring' temp usea to make sure itws not NULL.
 	char tempbuf[CHUNK];           //tempbuf is 10 charactors string that will add to the input string every time.
@@ -94,7 +93,6 @@ char* readInput(FILE* fp) {
 	} while (templen == CHUNK - 1 && tempbuf[CHUNK - 2] != '\n');
 
 	input[strlen(input) - 1] = '\0';
-	fflush(stdin);
 	return input;
 }
 
@@ -254,82 +252,6 @@ int checkForMatchName(struct client* ExistingClient, struct client* newClient) {
 	return 1;
 }
 
-/*Functio that realocte a client in the list after change on his debt*/
-void realocatClient(struct list* listOfDebts, struct client* existingClient) {
-
-	if (existingClient == listOfDebts->head) {  
-		if (existingClient->next == NULL)
-		{
-			return;
-		}
-		else if (existingClient->debt < existingClient->next->debt) {
-			return;
-		}
-		else {
-			listOfDebts->head = existingClient->next;
-
-			struct client* prev = existingClient->next; // Using to grab the client before where the client will replaced. 
-			
-			while (prev->next != NULL && existingClient->debt > prev->next->debt)
-			{
-				prev = prev->next;
-			}
-
-			if (prev->next == NULL)
-			{
-				prev->next = existingClient;
-				existingClient->next = NULL;
-				listOfDebts->tail = existingClient;
-			}
-			else {
-				existingClient->next = prev->next;
-				prev->next = existingClient;
-			}
-		}
-	}
-	else {
-		struct client* prev = listOfDebts->head;       // Grabing the clients before and after the client to compare the debt.
-		struct client* temp = listOfDebts->head->next;
-
-		while (prev->next != existingClient)
-		{
-			prev = prev->next;       
-			temp = temp->next;
-		}
-		if (existingClient->debt < existingClient->next->debt && existingClient->debt > prev->debt) {
-			return;
-		}
-		else if (existingClient->debt > existingClient->next->debt) {
-
-			while (temp->next != NULL && temp->next->debt < existingClient->debt)
-			{
-				temp = temp->next;
-			}
-			prev->next = existingClient->next;
-			existingClient->next = temp->next;
-			temp->next = existingClient;
-		}
-		else if (existingClient->debt < prev->debt) {
-
-			prev->next = existingClient->next;
-			prev = listOfDebts->head;
-
-			if (listOfDebts->head->debt > existingClient->debt)
-			{
-				addToHead(listOfDebts, existingClient);
-			}
-			else {
-				while (prev->next->debt <= existingClient->debt) {
-
-					prev = prev->next;
-				}
-				existingClient->next = prev->next;
-				prev->next = existingClient;
-			}
-		}
-	}
-}
-
 /*Function to check wich date is newer, return 1 if it does, 0 if not and -1 if its even*/
 int checkIfItsNew(date* excistingDate, date* newDate) {
 
@@ -358,11 +280,9 @@ void addToExistingClient(struct list* listOfDebts, struct client* existingClient
 
 	existingClient->debt += newClient->debt;
 
-	if (!checkIfItsNew(&existingClient->dateOfDebt, &newClient->dateOfDebt)) {  
+	if (!checkIfItsNew(&existingClient->dateOfDebt, &newClient->dateOfDebt)) {
 		if (existingClient->debt > 0)
 			existingClient->debt = 0;
-		
-		realocatClient(listOfDebts, existingClient);        // Ralocate the client acording his ne value of debt.
 	}
 	else {
 		existingClient->dateOfDebt = newClient->dateOfDebt;
@@ -370,8 +290,27 @@ void addToExistingClient(struct list* listOfDebts, struct client* existingClient
 		existingClient->phone = _strdup(newClient->phone);
 		if (existingClient->debt > 0)
 			existingClient->debt = 0;
-		
-		realocatClient(listOfDebts, existingClient);
+	}
+	popClientfromTheList(listOfDebts, existingClient);
+}
+
+void popClientfromTheList(struct list* listOfDebts, struct client* existingClient) {
+
+	if (existingClient == listOfDebts->head) {
+		listOfDebts->head = listOfDebts->head->next;
+		existingClient->next = NULL;
+	}
+	else {
+		struct client* prev = listOfDebts->head;
+		while (prev->next != existingClient) {
+			prev = prev->next;
+		}
+		prev->next = existingClient->next;
+		existingClient->next = NULL;
+		if (existingClient == listOfDebts->tail)
+		{
+			listOfDebts->tail = prev;
+		}
 	}
 }
 
@@ -384,38 +323,28 @@ void addToSortedList(struct list* listOfDebts, struct client* newClient) {
 		return;
 	}
 
-	struct client* temp = checkForExistingID(listOfDebts, newClient->ID);   // Temp will contain a spesific client if there is one with the identical ID's.
+	if (newClient->debt > 0) newClient->debt = 0;                       // Client can't be with positive debt.
 
-	if (temp == NULL || !checkForMatchName(temp, newClient)) {               // If there is'nt one temp == NULL, or there is but the names are'nt.
+	if (newClient->debt <= listOfDebts->head->debt) {
 
-		if (newClient->debt > 0) newClient->debt = 0;                       // Client can't be with positive debt.
+		addToHead(listOfDebts, newClient);
+		return;
+	}
+	else if (newClient->debt >= listOfDebts->tail->debt) {
 
-		if (newClient->debt <= listOfDebts->head->debt) {
-
-			addToHead(listOfDebts, newClient);
-			return;
-		}
-		else if (newClient->debt >= listOfDebts->tail->debt) {
-
-			addToTail(listOfDebts, newClient);
-			return;
-		}
-		else {
-
-			struct client* prev = listOfDebts->head;                         // Prev will use to grab client on the list that the new client should come afte him. 
-
-			while (prev->next != NULL && prev->next->debt < newClient->debt) 
-			{
-				prev = prev->next;
-			}
-			newClient->next = prev->next;                                    // Placing the new client.
-			prev->next = newClient;
-		}
+		addToTail(listOfDebts, newClient);
+		return;
 	}
 	else {
-		addToExistingClient(listOfDebts, temp, newClient);                   // If temp!=NULL >> there is a similar client. the new one will add to him.
-		freeClient(newClient);                                               // Freeing the memory of the added client. 
-	}	
+		struct client* prev = listOfDebts->head;                         // Prev will use to grab client on the list that the new client should come afte him. 
+
+		while (prev->next != NULL && prev->next->debt < newClient->debt)
+		{
+			prev = prev->next;
+		}
+		newClient->next = prev->next;                                    // Placing the new client.
+		prev->next = newClient;
+	}
 }
 
 /*Function to free memory from specific client*/
@@ -440,6 +369,7 @@ void freeList(struct list* List) {
 		List->head = List->head->next;
 		freeClient(Client);
 	}
+	free(List);
 	List = NULL;
 }
 
@@ -479,7 +409,10 @@ void erorrList(int type) {
 		printf("The clients with invalid date:\n\n");
 		break;
 	case 6:
-		printf("The clients id and name does'nt match:\n\n");
+		printf("The clients id and frist name does'nt match:\n\n");
+		break;
+	case 7:
+		printf("The clients id and last name does'nt match:\n\n");
 		break;
 	default:
 		break;
@@ -499,7 +432,7 @@ void printList(struct list* listOfclient) {
 
 	while (temp != NULL)                          // Runing over the list using temp.
 	{
-		for (int i = 0; i < 7; i++) {             // Checking if there is an error on the client.
+		for (int i = 0; i < 8; i++) {             // Checking if there is an error on the client.
 			if (!temp->errors[i])
 			{
 				validClient = 1;
@@ -520,7 +453,7 @@ void printList(struct list* listOfclient) {
 
 	temp = listOfclient->head;                   
 
-	for (int i = 0; i < 7; i++) {              // Printing the clients with an errors by index of errors.
+	for (int i = 0; i < 8; i++) {              // Printing the clients with an errors by index of errors.
 
 		temp = listOfclient->head;
 
@@ -580,6 +513,7 @@ int matchNameAndID(char* ID, char* firstName, char* lastName, struct list* listO
 void addToFile(char* input, FILE* fp, struct list* clientsList) {
 
 	char* line = input;
+	char* ex;
 
 	while (*line) {
 		*line = tolower(*line);            // Replacig the upper case letters to make it easy to work with.
@@ -592,59 +526,82 @@ void addToFile(char* input, FILE* fp, struct list* clientsList) {
 	char* token;                           // Uses to extract specific date from the line that scaned.  
 
 	//Extract the first name.
-	line = strstr(line, "first name");
-	if (!line) {                            
-
+	ex = strstr(line, "first name");
+	if (!ex) {
 		printf("looks like you forgot to type first name, enter first name:\n");
-		token = (readInput(stdin));
+		temp->firstName = (readInput(stdin));
 	}
 	else {
-		token = strtok(line, ":=");
+		token = strtok(ex, ":=");
 		token = strtok(NULL, ",");
+		temp->firstName = _strdup(token);
 	}
-	while (!validName(&token)) {
-		printf("Invalid first name, please enter first name again\n");
-		token = (readInput(stdin));
-	}
-	temp->firstName = _strdup(token);
-	
 
+	while (!validName(&temp->firstName)) {
+
+		free(temp->firstName);
+		printf("Invalid first name, please enter first name again\n");
+		temp->firstName = (readInput(stdin));
+		if (!strcmp(temp->firstName, "quit")) {
+			free(temp->firstName);
+			free(temp);
+			return;
+		}
+	}
+
+	free(line);
 	line = _strdup(input);
 
 	//Extract the last name.
-	line = strstr(line, "last name");
-	if (!line) {
+	ex = strstr(line, "last name");
+	if (!ex) {
 		printf("looks like you forgot to type last name, enter last name:\n");
-		token = (readInput(stdin));
+		temp->lastName = (readInput(stdin));
 	}
 	else {
-		token = strtok(line, ":=");
+		token = strtok(ex, ":=");
 		token = strtok(NULL, ",");
+		temp->lastName = _strdup(token);
 	}
-	while (!validName(&token)) {
-		printf("Invalid last name, please enter last name again\n");
-		token = (readInput(stdin));
-	}
-	temp->lastName = _strdup(token);
-	
 
+	while (!validName(&temp->lastName)) {
+		free(temp->lastName);
+		printf("Invalid last name, please enter last name again\n");
+		temp->lastName = (readInput(stdin));
+		if (!strcmp(temp->lastName, "quit")) {
+			free(temp->firstName);
+			free(temp->lastName);
+			free(temp);
+			return;
+		}
+	}
+	free(line);
 	line = _strdup(input);
 
 	//Extract the ID.
-	line = strstr(line, "id");
-	if (!line) {
+	ex = strstr(line, "id");
+	if (!ex) {
 		printf("looks like you forgot to type any ID, enter ID:\n");
-		token = (readInput(stdin));
+		temp->ID = (readInput(stdin));
 	}
 	else {
-		token = strtok(line, ":=");
+		token = strtok(ex, ":=");
 		token = strtok(NULL, ",");
+		temp->ID = _strdup(token);
 	}
-	while (!validID(&token)) {
+
+	while (!validID(&temp->ID)) {
+		free(temp->ID);
 		printf("Invalid ID, please enter ID again\n");
-		token = (readInput(stdin));
+		temp->ID = (readInput(stdin));
+		if (!strcmp(temp->ID, "quit")) {
+			free(temp->firstName);
+			free(temp->lastName);
+			free(temp->ID);
+			free(temp);
+			return;
+		}
 	}
-	temp->ID = _strdup(token);
 
 	int matchIndex;
 	while (matchIndex = matchNameAndID(temp->ID, temp->firstName, temp->lastName, clientsList))  // The user must to enter matching detailes for excisting ID.  
@@ -653,109 +610,196 @@ void addToFile(char* input, FILE* fp, struct list* clientsList) {
 		{
 		case 1:
 		{
+			free(temp->firstName);
 			printf("the firse name does not match an excisting ID, please enter first name:\n");
-			token = (readInput(stdin));
-			temp->firstName = _strdup(token);
+			temp->firstName = (readInput(stdin));
+			if (!strcmp(temp->firstName, "quit")) {
+				free(temp->firstName);
+				free(temp->lastName);
+				free(temp->ID);
+				free(temp);
+				return;
+			}
 			break;
 		}
 		case 2:
 		{
+			free(temp->lastName);
 			printf("the last name does not match an excisting ID, please enter last name:\n");
-			token = (readInput(stdin));
-			temp->lastName = _strdup(token);
+			temp->lastName = (readInput(stdin));
+			if (!strcmp(temp->lastName, "quit")) {
+				free(temp->firstName);
+				free(temp->lastName);
+				free(temp->ID);
+				free(temp);
+				return;
+			}
+			break;
 		}
-		break;
 		case 3:
 		{
+			free(temp->firstName);
+			free(temp->firstName);
 			printf("the firse and last name does not match an excisting ID, please enter again:\n");
-			token = (readInput(stdin));
-			temp->firstName = _strdup(token);
-			token = (readInput(stdin));
-			temp->lastName = _strdup(token);
+			temp->firstName = (readInput(stdin));
+			if (!strcmp(temp->firstName, "quit")) {
+				free(temp->firstName);
+				free(temp->ID);
+				free(temp);
+				return;
+			}
+
+			temp->lastName = (readInput(stdin));
+			if (!strcmp(temp->lastName, "quit")) {
+				free(temp->firstName);
+				free(temp->lastName);
+				free(temp->ID);
+				free(temp);
+				return;
+			}
+			break;
 		}
-		break;
 		default:
 			break;
 		}
 	}
-	
+
+	free(line);
 	line = _strdup(input);
 
 	//Extract the phone.
-	line = strstr(line, "phone");
-	if (!line) {
+	ex = strstr(line, "phone");
+	if (!ex) {
 		printf("looks like you forgot to type any phone, enter phone number:\n");
-		token = (readInput(stdin));
+		temp->phone = (readInput(stdin));
 	}
 	else {
-		token = strtok(line, ":=");
+		token = strtok(ex, ":=");
 		token = strtok(NULL, ",");
+		temp->phone = _strdup(token);
 	}
-	while (!validPhone(&token)) {
+	while (!validPhone(&temp->phone)) {
+		free(temp->phone);
 		printf("Invalid phone, please enter phone again\n");
-		token = (readInput(stdin));
+		temp->phone = (readInput(stdin));
+		if (!strcmp(temp->phone, "quit")) {
+			free(temp->firstName);
+			free(temp->lastName);
+			free(temp->ID);
+			free(temp->phone);
+			free(temp);
+			return;
+		}
 	}
-	temp->phone = _strdup(token);
 	
+
+	free(line);
 	line = _strdup(input);
 
 	//Extract the debt.
-	line = strstr(line, "debt");
-	if (!line) {
+	ex = strstr(line, "debt");
+	if (!ex) {
 		printf("looks like you forgot to type any debt, please enter debt:\n");
 		token = (readInput(stdin));
 	}
 	else {
-		token = strtok(line, ":=");
+		token = strtok(ex, ":=");
 		token = strtok(NULL, ",");
+		token = _strdup(token);
 	}
+
+
 	while (!validNumber(&token)) {
 		printf("Invalid debt, please enter debt again\n");
+		free(token);
 		token = (readInput(stdin));
+		if (!strcmp(token, "quit")) {
+			free(token);
+			free(temp->firstName);
+			free(temp->lastName);
+			free(temp->ID);
+			free(temp->phone);
+			free(temp);
+			return;
+		}
 	}
-	temp->debt += (float)atof(token);	
+	temp->debt += (float)atof(token);
+	free(token);
 
+	free(line);
 	line = _strdup(input);
 
 	//Extract the date.
-	line = strstr(line, "date");
-	if (!line) {
+	ex = strstr(line, "date");
+	if (!ex) {
 		printf("looks like you forgot to type any date, please enter date:\n");
 		token = (readInput(stdin));
 	}
 	else {
-		token = strtok(line, ":=");
+		token = strtok(ex, ":=");
 		token = strtok(NULL, ",");
-	}
-	while (!validDate(&token)) {
-		printf("Invalid date, please enter date again\n");
-		token = (readInput(stdin));
+		token = _strdup(token);
 	}
 
 	int date = 0;        // Uses to store the parts of the date
-	int flag = 0;        // Simbolize if there is a problem with date format  
+	int flag = 1;        // Simbolize if there is a problem with date format  
 	do {
-		if (flag)
+		if (!flag)
 		{
 			printf("Invalid date, please enter date again\n");
 			token = (readInput(stdin));
+			if (!strcmp(token, "quit")) {
+				free(token);
+				free(temp->firstName);
+				free(temp->lastName);
+				free(temp->ID);
+				free(temp->phone);
+				free(temp);
+				return;
+			}
+		}
+		while (!validDate(&token)) {
+			printf("Invalid date, please enter date again\n");
+			token = (readInput(stdin));
+			if (!strcmp(token, "quit")) {
+				free(token);
+				free(temp->firstName);
+				free(temp->lastName);
+				free(temp->ID);
+				free(temp->phone);
+				free(temp);
+				return;
+			}
 		}
 		token = strtok(token, "/");
+		token = _strdup(token);
 		date = atoi(token);
+
 		if (date <= 31 && date > 0)
 			temp->dateOfDebt.day = date;
+		else flag = 0;
+
 		token = strtok(NULL, "/");
+		token = _strdup(token);
 		date = atoi(token);
+
 		if (date <= 12 && date > 0)
 			temp->dateOfDebt.month = date;
+		else flag = 0;
+
 		token = strtok(NULL, "\n");
+		token = _strdup(token);
 		date = atoi(token);
+
 		if (date <= 2500 && date > 1000)
 			temp->dateOfDebt.year = date;
-		flag = 1;
+		else flag = 0;
 	} while (temp->dateOfDebt.day == 0 || temp->dateOfDebt.month == 0 || temp->dateOfDebt.year == 0);
-	
-	printToFile(fp,temp);                  // Print the record to the file.
+
+	free(token);
+	free(input);
+	printToFile(fp, temp);                  // Print the record to the file.
+	printf("Record added succsesfuly\n");
 	addToSortedList(clientsList, temp);    // Add the new client to sorted list
 }
 
@@ -773,6 +817,7 @@ void selectQuery(struct list* clientsList, char* param) {
 	struct client* selectedClient = clientsList->head; // Using to rum over the list and compare the data that has been asked.
 	line = NULL;                                       // Using to grab the parameter.
 	char* op = NULL;                                   // Using to grab the notation.
+	int count = 0;
 
 	if ((line = strstr(param, "first name")) != NULL) {
 
@@ -783,14 +828,21 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(token, selectedClient->firstName) != 0)
+			if (!validName(&token))	printf("\nInvalid first name, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(token, selectedClient->firstName) != 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if ((op = strstr(param, "=")) > NULL) {
@@ -800,14 +852,21 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (!strcmp(token, selectedClient->firstName))
+			if (!validName(&token))	printf("\nInvalid first name, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (!strcmp(token, selectedClient->firstName))
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if (strstr(param, ">") > NULL) {
@@ -817,14 +876,21 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(selectedClient->firstName, token) > 0)
+			if (!validName(&token))	printf("\nInvalid first name, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(selectedClient->firstName, token) > 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if (strstr(param, "<") > NULL) {
@@ -834,17 +900,24 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(selectedClient->firstName, token) < 0)
+			if (!validName(&token))	printf("\nInvalid first name, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(selectedClient->firstName, token) < 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
-		else printf("The operator that entered is invalid for this parameter, please try again!\n");
+		else printf("\nThe operator that entered is invalid for this parameter, please try again!\n");
 	}
 	else if ((line = strstr(param, "last name")) != NULL) {
 
@@ -855,14 +928,21 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (!strcmp(token, selectedClient->lastName))
+			if (!validName(&token))	printf("\nInvalid last name, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (!strcmp(token, selectedClient->lastName))
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if (strstr(param, "=") > NULL) {
@@ -872,14 +952,21 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(token, selectedClient->lastName) == 0)
+			if (!validName(&token))	printf("\nInvalid last name, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(token, selectedClient->lastName) == 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if (strstr(param, ">") > NULL) {
@@ -889,14 +976,21 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(selectedClient->lastName, token) > 0)
+			if (!validName(&token))	printf("\nInvalid last name, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(selectedClient->lastName, token) > 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if (strstr(param, "<") > NULL) {
@@ -906,17 +1000,24 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(selectedClient->lastName, token) < 0)
+			if (!validName(&token))	printf("\nInvalid last name, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(selectedClient->lastName, token) < 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
-		else printf("The operator that entered is invalid for this parameter, please try again!");
+		else printf("\nThe operator that entered is invalid for this parameter, please try again!");
 	}
 	else if (strstr(param, "id") != NULL) {
 
@@ -927,14 +1028,21 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(token, selectedClient->ID))
+			if (!validID(&token))	printf("\nInvalid ID, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(token, selectedClient->ID))
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if ((op = strstr(param, "=")) > NULL) {
@@ -944,14 +1052,21 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(token, selectedClient->ID) == 0)
+			if (!validID(&token))	printf("\nInvalid ID, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(token, selectedClient->ID) == 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if ((op = strstr(param, ">")) > NULL) {
@@ -961,16 +1076,22 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(selectedClient->ID, token) > 0)
+			if (!validID(&token))	printf("\nInvalid ID, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(selectedClient->ID, token) > 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
-
 		}
 		else if (strstr(param, "<") > NULL) {
 
@@ -979,17 +1100,24 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(selectedClient->ID, token) < 0)
+			if (!validID(&token))	printf("\nInvalid ID, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(selectedClient->ID, token) < 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
-		else printf("The operator that entered is invalid for this parameter, please try again!");
+		else printf("\nThe operator that entered is invalid for this parameter, please try again!");
 	}
 	else if ((line = strstr(param, "phone")) != NULL) {
 
@@ -1000,14 +1128,21 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (!strcmp(token, selectedClient->phone))
+			if (!validID(&token))	printf("\nInvalid phone, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (!strcmp(token, selectedClient->phone))
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if (strstr(param, "=") > NULL) {
@@ -1017,14 +1152,21 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(token, selectedClient->phone) != 0)
+			if (!validID(&token))	printf("\nInvalid phone, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(token, selectedClient->phone) != 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if (strstr(param, ">") > NULL) {
@@ -1034,16 +1176,22 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(selectedClient->phone, token) > 0)
+			if (!validID(&token))	printf("\nInvalid phone, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(selectedClient->phone, token) > 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
-
 		}
 		else if (strstr(param, "<") > NULL) {
 
@@ -1052,17 +1200,24 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			while (selectedClient != NULL)
-			{
-				if (strcmp(selectedClient->phone, token) < 0)
+			if (!validID(&token))	printf("\nInvalid phone, please try again\n");
+			else {
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (strcmp(selectedClient->phone, token) < 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
-		else printf("The operator that entered is invalid for this parameter, please try again!");
+		else printf("\nThe operator that entered is invalid for this parameter, please try again!");
 	}
 	else if (strstr(param, "debt") != NULL) {
 
@@ -1072,17 +1227,23 @@ void selectQuery(struct list* clientsList, char* param) {
 			token = strtok(NULL, "\n");
 
 			token = removeSpacesFromStr(&token);
+			if (!validNumber(&token))	printf("\nInvalid debt, please try again\n");
+			else {
+				double comparedDebt = atof(token);
 
-			double comparedDebt = atof(token);
-
-			while (selectedClient != NULL)
-			{
-				if (selectedClient->debt != comparedDebt)
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (selectedClient->debt != comparedDebt)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if (strstr(param, "=") > NULL) {
@@ -1092,16 +1253,23 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			float comparedDebt = (float)atof(token);
+			if (!validNumber(&token))	printf("\nInvalid debt, please try again\n");
+			else {
+				float comparedDebt = (float)atof(token);
 
-			while (selectedClient != NULL)
-			{
-				if (selectedClient->debt == comparedDebt)
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (selectedClient->debt == comparedDebt)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if (strstr(param, ">") > NULL) {
@@ -1111,18 +1279,24 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			float comparedDebt = (float)atof(token);
+			if (!validNumber(&token))	printf("\nInvalid debt, please try again\n");
+			else {
+				float comparedDebt = (float)atof(token);
 
-			while (selectedClient != NULL)
-			{
-				if (selectedClient->debt > comparedDebt)
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (selectedClient->debt > comparedDebt)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
-
 		}
 		else if (strstr(param, "<") > NULL) {
 
@@ -1131,19 +1305,26 @@ void selectQuery(struct list* clientsList, char* param) {
 
 			token = removeSpacesFromStr(&token);
 
-			float comparedDebt = (float)atof(token);
+			if (!validNumber(&token))	printf("\nInvalid debt, please try again\n");
+			else {
+				float comparedDebt = (float)atof(token);
 
-			while (selectedClient != NULL)
-			{
-				if (selectedClient->debt < comparedDebt)
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (selectedClient->debt < comparedDebt)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
-		else printf("The operator that entered is invalid for this parameter, please try again!");
+		else printf("\nThe operator that entered is invalid for this parameter, please try again!");
 	}
 	else if (strstr(param, "date") != NULL) {
 
@@ -1152,27 +1333,37 @@ void selectQuery(struct list* clientsList, char* param) {
 		if (strstr(param, "!=") > NULL)
 		{
 			char* token = strtok(param, "=");
-			token = strtok(NULL, "\n");
+			token = strtok(NULL, "\n");			
 
-			token = removeSpacesFromStr(&token);
-
-			token = strtok(token, "/");
-			temp->day = atoi(token);
-
-			token = strtok(NULL, "/");
-			temp->month = atoi(token);
-
-			token = strtok(NULL, "\n");
-			temp->year = atoi(token);
-
-			while (selectedClient != NULL)
+			if (!validDate(&token))
 			{
-				if (checkIfItsNew(&selectedClient->dateOfDebt, temp) != -1)
+				printf("\nInvalid date, please try again.\n");
+				
+			}
+			else {
+
+				token = strtok(token, "/");
+				temp->day = atoi(token);
+
+				token = strtok(NULL, "/");
+				temp->month = atoi(token);
+
+				token = strtok(NULL, "\n");
+				temp->year = atoi(token);
+
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (checkIfItsNew(&selectedClient->dateOfDebt, temp) != -1)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if (strstr(param, "=") > NULL) {
@@ -1180,25 +1371,36 @@ void selectQuery(struct list* clientsList, char* param) {
 			char* token = strtok(param, "=");
 			token = strtok(NULL, "\n");
 
-			token = removeSpacesFromStr(&token);
-
-			token = strtok(token, "/");
-			temp->day = atoi(token);
-
-			token = strtok(NULL, "/");
-			temp->month = atoi(token);
-
-			token = strtok(NULL, "\n");
-			temp->year = atoi(token);
-
-			while (selectedClient != NULL)
+			//token = removeSpacesFromStr(&token);
+			if (!validDate(&token))
 			{
-				if (checkIfItsNew(&selectedClient->dateOfDebt, temp) == -1)
+				printf("\nInvalid date, please try again.\n");
+				
+			}
+			else {
+
+				token = strtok(token, "/");
+				temp->day = atoi(token);
+
+				token = strtok(NULL, "/");
+				temp->month = atoi(token);
+
+				token = strtok(NULL, "\n");
+				temp->year = atoi(token);
+
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (checkIfItsNew(&selectedClient->dateOfDebt, temp) == -1)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
 		else if (strstr(param, ">") > NULL) {
@@ -1206,61 +1408,80 @@ void selectQuery(struct list* clientsList, char* param) {
 			char* token = strtok(param, ">");
 			token = strtok(NULL, "\n");
 
-			token = removeSpacesFromStr(&token);
-
-			token = strtok(token, "/");
-			temp->day = atoi(token);
-
-			token = strtok(NULL, "/");
-			temp->month = atoi(token);
-
-			token = strtok(NULL, "\n");
-			temp->year = atoi(token);
-
-			float comparedDebt = (float)atof(token);
-
-			while (selectedClient != NULL)
+			//token = removeSpacesFromStr(&token);
+			if (!validDate(&token))
 			{
-				if (checkIfItsNew(temp, &selectedClient->dateOfDebt) == 1)
-				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
-				}
-				else selectedClient = selectedClient->next;
+				printf("\nInvalid date, please try again.\n");
 			}
+			else {
 
+				token = strtok(token, "/");
+				temp->day = atoi(token);
+
+				token = strtok(NULL, "/");
+				temp->month = atoi(token);
+
+				token = strtok(NULL, "\n");
+				temp->year = atoi(token);
+
+				float comparedDebt = (float)atof(token);
+
+				while (selectedClient != NULL)
+				{
+					if (checkIfItsNew(temp, & selectedClient->dateOfDebt) == 1)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
+				}
+				if (count == 0) printf("\nNo client was found\n");
+			}
 		}
 		else if (strstr(param, "<") > NULL) {
 
 			char* token = strtok(param, "<");
 			token = strtok(NULL, "\n");
 
-			token = removeSpacesFromStr(&token);
-
-			token = strtok(token, "/");
-			temp->day = atoi(token);
-
-			token = strtok(NULL, "/");
-			temp->month = atoi(token);
-
-			token = strtok(NULL, "\n");
-			temp->year = atoi(token);
-
-			float comparedDebt = (float)atof(token);
-
-			while (selectedClient != NULL)
+			//token = removeSpacesFromStr(&token);
+			if (!validDate(&token))
 			{
-				if (checkIfItsNew(temp, &selectedClient->dateOfDebt) == 0)
+				printf("\nInvalid date, please try again.\n");
+			}
+			else {
+
+				token = strtok(token, "/");
+				temp->day = atoi(token);
+
+				token = strtok(NULL, "/");
+				temp->month = atoi(token);
+
+				token = strtok(NULL, "\n");
+				temp->year = atoi(token);
+
+				float comparedDebt = (float)atof(token);
+
+				while (selectedClient != NULL)
 				{
-					printClient(selectedClient);
-					selectedClient = selectedClient->next;
+					if (checkIfItsNew(temp, &selectedClient->dateOfDebt) == 0)
+					{
+						count++;
+						if (count == 1)
+							printf("\nFirst Name\tLast Name\tID\t\tPhone\t    Debt  \tDate\n\n");
+						printClient(selectedClient);
+						selectedClient = selectedClient->next;
+					}
+					else selectedClient = selectedClient->next;
 				}
-				else selectedClient = selectedClient->next;
+				if (count == 0) printf("\nNo client was found\n");
 			}
 		}
-		else printf("The operator that entered is invalid for this parameter, please try again!");
+		else printf("\nThe operator that entered is invalid for this parameter, please try again!");
 	}
-	else printf("There is'nt parameter like that, please try again!");
+	else printf("\nThere is'nt parameter like that, please try again!");
 }
 
 /*Function to get a query from user, and execute the proper action*/
@@ -1278,26 +1499,31 @@ int getQuery(FILE* fp, struct list* clientsList) {
 	if (!strcmp(token, "set")) {
 
 		addToFile(query + 4, fp, clientsList);
+		free(query);
 		return 1;
 	}
 	else if (!strcmp(token, "select"))
 	{
 		selectQuery(clientsList, query + 7);
+		free(query);
 		return 1;
 	}
 	else if (!strcmp(token, "print"))
 	{
 		printList(clientsList);
+		free(query);
 		return 1;
 	}
 	else if (!strcmp(token, "quit"))
 	{
 		printf("BYE BYE!!\n");
+		free(query);
 		return 0;
 	}
 	else
 	{
 		printf("Invalid query. Please try again\n");
+		free(query);
 		return 1;
 	}
 }
@@ -1375,22 +1601,41 @@ void readFile(FILE* fp, struct list* listOfDebts) {
 		}
 
 		free(line);
-		addToSortedList(listOfDebts, newClient);
+
+		struct client* temp = checkForExistingID(listOfDebts, newClient->ID);
+		if (temp != NULL) {
+			if (strcmp(temp->firstName, newClient->firstName)) {
+				newClient->errors[6] = 1;
+
+				if (strcmp(temp->lastName, newClient->lastName)) {
+					newClient->errors[7] = 1;
+				}
+				addToSortedList(listOfDebts, newClient);
+			}
+			else{
+				addToExistingClient(listOfDebts, temp, newClient);
+				addToSortedList(listOfDebts, temp);
+				freeClient(newClient);
+			}
+		}
+		else{ 
+			addToSortedList(listOfDebts, newClient);
+		}
+		
 	}
+	
 }
 
-FILE* openFile(char* nameOfFile) {
+FILE* openFile(char** nameOfFile) {
 
 	FILE* fp;
-	do
-	{
-		if ((fp = fopen(nameOfFile, "r+t")) == NULL) {
-			printf("Faild to open the file with this name:%s\n", nameOfFile);
-			printf("Please enter a new name:");
-			nameOfFile = readInput(stdin);
-		}
-	} while (fp == NULL);
-
+	
+	while ((fp = fopen(*nameOfFile, "r+t")) == NULL) {
+		printf("Faild to open the file with this name: %s\n", *nameOfFile);
+		free(*nameOfFile);
+		printf("Please enter a new name:");
+		*nameOfFile = readInput(stdin);
+	}	
 	return fp;
 }
 

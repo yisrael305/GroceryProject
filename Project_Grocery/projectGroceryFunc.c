@@ -738,7 +738,6 @@ void addToFile(char* input, FILE* fp, struct list* clientsList) {
 	else {
 		token = strtok(ex, ":=");
 		token = strtok(NULL, ",");
-		token = _strdup(token);
 	}
 
 	int date = 0;        // Uses to store the parts of the date
@@ -774,6 +773,7 @@ void addToFile(char* input, FILE* fp, struct list* clientsList) {
 		token = strtok(token, "/");
 		token = _strdup(token);
 		date = atoi(token);
+		free(token);
 
 		if (date <= 31 && date > 0)
 			temp->dateOfDebt.day = date;
@@ -782,6 +782,7 @@ void addToFile(char* input, FILE* fp, struct list* clientsList) {
 		token = strtok(NULL, "/");
 		token = _strdup(token);
 		date = atoi(token);
+		free(token);
 
 		if (date <= 12 && date > 0)
 			temp->dateOfDebt.month = date;
@@ -790,14 +791,14 @@ void addToFile(char* input, FILE* fp, struct list* clientsList) {
 		token = strtok(NULL, "\n");
 		token = _strdup(token);
 		date = atoi(token);
+		free(token);
 
 		if (date <= 2500 && date > 1000)
 			temp->dateOfDebt.year = date;
 		else flag = 0;
 	} while (temp->dateOfDebt.day == 0 || temp->dateOfDebt.month == 0 || temp->dateOfDebt.year == 0);
 
-	free(token);
-	free(input);
+	free(line);
 	printToFile(fp, temp);                  // Print the record to the file.
 	printf("Record added succsesfuly\n");
 	addToSortedList(clientsList, temp);    // Add the new client to sorted list

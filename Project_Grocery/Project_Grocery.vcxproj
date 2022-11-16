@@ -139,11 +139,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="projectGroceryFunc.c" />
+    <ClCompile Include="Client.c" />
+    <ClCompile Include="GeneralFunc.c" />
+    <ClCompile Include="List.c" />
+    <ClCompile Include="MatchClient.c" />
+    <ClCompile Include="PrintFunc.c" />
     <ClCompile Include="projectGroceryMain.c" />
+    <ClCompile Include="Queries.c" />
+    <ClCompile Include="Validation.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Client.h" />
+    <ClInclude Include="GeneralFunc.h" />
+    <ClInclude Include="List.h" />
+    <ClInclude Include="MatchClient.h" />
+    <ClInclude Include="PrintFunc.h" />
     <ClInclude Include="projectGroceryHead.h" />
+    <ClInclude Include="Queries.h" />
+    <ClInclude Include="Validation.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

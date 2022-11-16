@@ -18,12 +18,51 @@
     <ClCompile Include="projectGroceryMain.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="projectGroceryFunc.c">
+    <ClCompile Include="GeneralFunc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Client.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="List.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MatchClient.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Queries.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Validation.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrintFunc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="projectGroceryHead.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneralFunc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="List.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MatchClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Queries.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Validation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PrintFunc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

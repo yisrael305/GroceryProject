@@ -9,7 +9,7 @@
 /*Function to get a query from user, and execute the proper action*/
 int getQuery(FILE* fp, struct list* clientsList) 
 {
-	char* query;
+	char* query=NULL;
 	do
 	{
 		printf("\n-->");
@@ -355,12 +355,24 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 		if (date <= 2500 && date > 1000)
 			temp->dateOfDebt.year = date;
 		else flag = 0;
+
+		temp->errors = 255;
 	} while (temp->dateOfDebt.day == 0 || temp->dateOfDebt.month == 0 || temp->dateOfDebt.year == 0);
 
 	free(line);
-	printToFile(fp, temp);                  // Print the record to the file.
+	struct client* search = checkForExistingID(clientsList, temp->ID);
+	if (search != NULL)
+	{
+		if (matchNameAndID(temp, clientsList) == 0)
+		{
+			addToExistingClient(clientsList, search, temp);
+			addToSortedList(clientsList, search);
+			printToFile(fp, temp);                  // Print the record to the file.
+			freeClient(temp);
+		}
+		else addToSortedList(clientsList, temp);
+	}
 	printf("Record added succsesfuly\n");
-	addToSortedList(clientsList, temp);    // Add the new client to sorted list
 }
 
 /*Function to allow the user to print a specific data from the list

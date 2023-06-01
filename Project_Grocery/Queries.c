@@ -6,7 +6,9 @@
 #include "MatchClient.h"
 #include "List.h"
 
-/*Function to get a query from user, and execute the proper action*/
+char* param[6] = { "first name","last name","id","phone","debt","date" };
+int(*validFunc[6])(char**) = { validName,validName,validID,validPhone,validNumber,validDate };
+
 int getQuery(FILE* fp, struct list* clientsList) 
 {
 	char* query=NULL;
@@ -57,12 +59,31 @@ int getQuery(FILE* fp, struct list* clientsList)
 	} while (!(*query));
 }
 
+void addDateToClient(date* dateOfClient, char* dateToAdd)
+{
+	
+	int dateParams[] = { dateOfClient->day, dateOfClient->month, dateOfClient->year };
+	int i = 0;
+	char* token; 
+	
+	while (i < 3)
+	{
+		if (i == 0)
+			token = strtok(dateToAdd, "/");
+		else 
+			token = strtok(NULL, "/");
+		
+		dateParams[i] = atoi(token);
+		i++;
+	}
+}
+
 /*Fnction to build a new client from input and add him to the list and file*/
 void addToFile(char* input, FILE* fp, struct list* clientsList)
 {
 	char* line = input;
 	char* ex;
-
+						      
 	while (*line)
 	{
 		*line = tolower(*line);            // Replacig the upper case letters to make it easy to work with.
@@ -71,295 +92,345 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 	line = _strdup(input);
 
 	struct client* temp = createClient();  // Asiggin memory for the new client.
+	char** Client_param[] = { &temp->firstName, &temp->lastName, &temp->ID, &temp->phone, &temp->debt, &temp->dateOfDebt };
 
-	char* token;                           // Uses to extract specific date from the line that scaned.  
+	char* token;                           // Uses to extract specific data from the line that scaned.  
+
+	int checkParam = 0;
+	char* paramPointer = NULL;
+	int validParam = 0;
 
 	//Extract the first name.
-	ex = strstr(line, "first name");
-	if (!ex)
+	while (checkParam < 6)
 	{
-		printf("looks like you forgot to type first name, enter first name:\n");
-		temp->firstName = (readInput(stdin));
-	}
-	else
-	{
-		token = strtok(ex, ":=");
-		token = strtok(NULL, ",");
-		temp->firstName = _strdup(token);
-	}
+		paramPointer = strstr(line, param[checkParam]);
 
-	while (!validName(&temp->firstName))
-	{
-		free(temp->firstName);
-		printf("Invalid first name, please enter first name again\n");
-		temp->firstName = (readInput(stdin));
-		if (!strcmp(temp->firstName, "quit")) {
-			free(temp->firstName);
-			free(temp);
-			return;
-		}
-	}
-
-	free(line);
-	line = _strdup(input);
-
-	//Extract the last name.
-	ex = strstr(line, "last name");
-	if (!ex) 
-	{
-		printf("looks like you forgot to type last name, enter last name:\n");
-		temp->lastName = (readInput(stdin));
-	}
-	else 
-	{
-		token = strtok(ex, ":=");
-		token = strtok(NULL, ",");
-		temp->lastName = _strdup(token);
-	}
-
-	while (!validName(&temp->lastName)) 
-	{
-		free(temp->lastName);
-		printf("Invalid last name, please enter last name again\n");
-		temp->lastName = (readInput(stdin));
-		if (!strcmp(temp->lastName, "quit")) {
-			free(temp->firstName);
-			free(temp->lastName);
-			free(temp);
-			return;
-		}
-	}
-	free(line);
-	line = _strdup(input);
-
-	//Extract the ID.
-	ex = strstr(line, "id");
-	if (!ex)
-	{
-		printf("looks like you forgot to type any ID, enter ID:\n");
-		temp->ID = (readInput(stdin));
-	}
-	else 
-	{
-		token = strtok(ex, ":=");
-		token = strtok(NULL, ",");
-		temp->ID = _strdup(token);
-	}
-
-	while (!validID(&temp->ID)) 
-	{
-		free(temp->ID);
-		printf("Invalid ID, please enter ID again\n");
-		temp->ID = (readInput(stdin));
-		if (!strcmp(temp->ID, "quit"))
+		if (checkParam == 0)
 		{
-			free(temp->firstName);
-			free(temp->lastName);
-			free(temp->ID);
-			free(temp);
-			return;
+			token = strtok(paramPointer, ":=");
+			token = strtok(NULL, ",");
 		}
-	}
+		else
+		{
+			token = strtok(paramPointer, ":=");
+			token = strtok(NULL, ",");
+		}
 
-	int matchIndex;
-	while (matchIndex = matchNameAndID(temp, clientsList))  // The user must to enter matching detailes for excisting ID.  
-	{
-		switch (matchIndex)
+		if (checkParam == 5)
+			addDateToClient(&temp->dateOfDebt, token);
+		else if (checkParam == 4)
 		{
-		case 1:
-		{
-			free(temp->firstName);
-			printf("the firse name does not match an excisting ID, please enter first name:\n");
-			temp->firstName = (readInput(stdin));
-			if (!strcmp(temp->firstName, "quit")) {
-				free(temp->firstName);
-				free(temp->lastName);
-				free(temp->ID);
-				free(temp);
-				return;
-			}
-			break;
+			temp->debt = (float)atof(token);
 		}
-		case 2:
+		else
 		{
-			free(temp->lastName);
-			printf("the last name does not match an excisting ID, please enter last name:\n");
-			temp->lastName = (readInput(stdin));
-			if (!strcmp(temp->lastName, "quit"))
+			*(Client_param[checkParam]) = _strdup(token);
+		}
+
+		/*while (paramPointer == NULL)
+		{
+			printf("Looks like you forgot to enter the %s:\n", param[checkParam]);
+			paramPointer = readInput(stdin);
+
+			while (!(validParam = validFunc[checkParam](&paramPointer)))
 			{
-				free(temp->firstName);
-				free(temp->lastName);
-				free(temp->ID);
-				free(temp);
-				return;
+				if (token == "quit")
+					exit(1);
+				else {
+					printf("The %s that you entered is not valid, Please try again", param[checkParam]);
+					token = readInput(stdin);
+				}
 			}
-			break;
-		}
-		case 3:
-		{
-			free(temp->ID);
-			printf("the firse and last name does not match an excisting ID, please enter ID again:\n");
-			temp->ID = (readInput(stdin));
-			if (!strcmp(temp->ID, "quit")) {
-				free(temp->firstName);
-				free(temp->lastName);
-				free(temp->ID);
-				free(temp);
-				return;
-			}
-			break;
-		}
-		default:
-			break;
-		}
+		}*/
+		line = _strdup(input);
+		checkParam++;
 	}
+	//ex = strstr(line, "first name");
+	//if (!ex)
+	//{
+	//	printf("looks like you forgot to type first name, enter first name:\n");
+	//	temp->firstName = (readInput(stdin));
+	//}
+	//else
+	//{
+	//	token = strtok(ex, ":=");
+	//	token = strtok(NULL, ",");
+	//	temp->firstName = _strdup(token);
+	//}
 
-	free(line);
-	line = _strdup(input);
+	//while (!validName(&temp->firstName))
+	//{
+	//	free(temp->firstName);
+	//	printf("Invalid first name, please enter first name again\n");
+	//	temp->firstName = (readInput(stdin));
+	//	if (!strcmp(temp->firstName, "quit")) {
+	//		free(temp->firstName);
+	//		free(temp);
+	//		return;
+	//	}
+	//}
 
-	//Extract the phone.
-	ex = strstr(line, "phone");
-	if (!ex)
-	{
-		printf("looks like you forgot to type any phone, enter phone number:\n");
-		temp->phone = (readInput(stdin));
-	}
-	else 
-	{
-		token = strtok(ex, ":=");
-		token = strtok(NULL, ",");
-		temp->phone = _strdup(token);
-	}
-	while (!validPhone(&temp->phone))
-	{
-		free(temp->phone);
-		printf("Invalid phone, please enter phone again\n");
-		temp->phone = (readInput(stdin));
-		if (!strcmp(temp->phone, "quit")) {
-			free(temp->firstName);
-			free(temp->lastName);
-			free(temp->ID);
-			free(temp->phone);
-			free(temp);
-			return;
-		}
-	}
+	//free(line);
+	//line = _strdup(input);
+
+	////Extract the last name.
+	//ex = strstr(line, "last name");
+	//if (!ex) 
+	//{
+	//	printf("looks like you forgot to type last name, enter last name:\n");
+	//	temp->lastName = (readInput(stdin));
+	//}
+	//else 
+	//{
+	//	token = strtok(ex, ":=");
+	//	token = strtok(NULL, ",");
+	//	temp->lastName = _strdup(token);
+	//}
+
+	//while (!validName(&temp->lastName)) 
+	//{
+	//	free(temp->lastName);
+	//	printf("Invalid last name, please enter last name again\n");
+	//	temp->lastName = (readInput(stdin));
+	//	if (!strcmp(temp->lastName, "quit")) {
+	//		free(temp->firstName);
+	//		free(temp->lastName);
+	//		free(temp);
+	//		return;
+	//	}
+	//}
+	//free(line);
+	//line = _strdup(input);
+
+	////Extract the ID.
+	//ex = strstr(line, "id");
+	//if (!ex)
+	//{
+	//	printf("looks like you forgot to type any ID, enter ID:\n");
+	//	temp->ID = (readInput(stdin));
+	//}
+	//else 
+	//{
+	//	token = strtok(ex, ":=");
+	//	token = strtok(NULL, ",");
+	//	temp->ID = _strdup(token);
+	//}
+
+	//while (!validID(&temp->ID)) 
+	//{
+	//	free(temp->ID);
+	//	printf("Invalid ID, please enter ID again\n");
+	//	temp->ID = (readInput(stdin));
+	//	if (!strcmp(temp->ID, "quit"))
+	//	{
+	//		free(temp->firstName);
+	//		free(temp->lastName);
+	//		free(temp->ID);
+	//		free(temp);
+	//		return;
+	//	}
+	//}
+
+	//int matchIndex;
+	//while (matchIndex = matchNameAndID(temp, clientsList))  // The user must to enter matching detailes for excisting ID.  
+	//{
+	//	switch (matchIndex)
+	//	{
+	//	case 1:
+	//	{
+	//		free(temp->firstName);
+	//		printf("the firse name does not match an excisting ID, please enter first name:\n");
+	//		temp->firstName = (readInput(stdin));
+	//		if (!strcmp(temp->firstName, "quit")) {
+	//			free(temp->firstName);
+	//			free(temp->lastName);
+	//			free(temp->ID);
+	//			free(temp);
+	//			return;
+	//		}
+	//		break;
+	//	}
+	//	case 2:
+	//	{
+	//		free(temp->lastName);
+	//		printf("the last name does not match an excisting ID, please enter last name:\n");
+	//		temp->lastName = (readInput(stdin));
+	//		if (!strcmp(temp->lastName, "quit"))
+	//		{
+	//			free(temp->firstName);
+	//			free(temp->lastName);
+	//			free(temp->ID);
+	//			free(temp);
+	//			return;
+	//		}
+	//		break;
+	//	}
+	//	case 3:
+	//	{
+	//		free(temp->ID);
+	//		printf("the firse and last name does not match an excisting ID, please enter ID again:\n");
+	//		temp->ID = (readInput(stdin));
+	//		if (!strcmp(temp->ID, "quit")) {
+	//			free(temp->firstName);
+	//			free(temp->lastName);
+	//			free(temp->ID);
+	//			free(temp);
+	//			return;
+	//		}
+	//		break;
+	//	}
+	//	default:
+	//		break;
+	//	}
+	//}
+
+	//free(line);
+	//line = _strdup(input);
+
+	////Extract the phone.
+	//ex = strstr(line, "phone");
+	//if (!ex)
+	//{
+	//	printf("looks like you forgot to type any phone, enter phone number:\n");
+	//	temp->phone = (readInput(stdin));
+	//}
+	//else 
+	//{
+	//	token = strtok(ex, ":=");
+	//	token = strtok(NULL, ",");
+	//	temp->phone = _strdup(token);
+	//}
+	//while (!validPhone(&temp->phone))
+	//{
+	//	free(temp->phone);
+	//	printf("Invalid phone, please enter phone again\n");
+	//	temp->phone = (readInput(stdin));
+	//	if (!strcmp(temp->phone, "quit")) {
+	//		free(temp->firstName);
+	//		free(temp->lastName);
+	//		free(temp->ID);
+	//		free(temp->phone);
+	//		free(temp);
+	//		return;
+	//	}
+	//}
 
 
-	free(line);
-	line = _strdup(input);
+	//free(line);
+	//line = _strdup(input);
 
-	//Extract the debt.
-	ex = strstr(line, "debt");
-	if (!ex) {
-		printf("looks like you forgot to type any debt, please enter debt:\n");
-		token = (readInput(stdin));
-	}
-	else
-	{
-		token = strtok(ex, ":=");
-		token = strtok(NULL, ",");
-		token = _strdup(token);
-	}
+	////Extract the debt.
+	//ex = strstr(line, "debt");
+	//if (!ex) {
+	//	printf("looks like you forgot to type any debt, please enter debt:\n");
+	//	token = (readInput(stdin));
+	//}
+	//else
+	//{
+	//	token = strtok(ex, ":=");
+	//	token = strtok(NULL, ",");
+	//	token = _strdup(token);
+	//}
 
 
-	while (!validNumber(&token)) 
-	{
-		printf("Invalid debt, please enter debt again\n");
-		free(token);
-		token = (readInput(stdin));
-		if (!strcmp(token, "quit"))
-		{
-			free(token);
-			free(temp->firstName);
-			free(temp->lastName);
-			free(temp->ID);
-			free(temp->phone);
-			free(temp);
-			return;
-		}
-	}
-	temp->debt += (float)atof(token);
-	free(token);
+	//while (!validNumber(&token)) 
+	//{
+	//	printf("Invalid debt, please enter debt again\n");
+	//	free(token);
+	//	token = (readInput(stdin));
+	//	if (!strcmp(token, "quit"))
+	//	{
+	//		free(token);
+	//		free(temp->firstName);
+	//		free(temp->lastName);
+	//		free(temp->ID);
+	//		free(temp->phone);
+	//		free(temp);
+	//		return;
+	//	}
+	//}
+	//temp->debt += (float)atof(token);
+	//free(token);
 
-	free(line);
-	line = _strdup(input);
+	//free(line);
+	//line = _strdup(input);
 
-	//Extract the date.
-	ex = strstr(line, "date");
-	if (!ex) 
-	{
-		printf("looks like you forgot to type any date, please enter date:\n");
-		token = (readInput(stdin));
-	}
-	else 
-	{
-		token = strtok(ex, ":=");
-		token = strtok(NULL, ",");
-	}
+	////Extract the date.
+	//ex = strstr(line, "date");
+	//if (!ex) 
+	//{
+	//	printf("looks like you forgot to type any date, please enter date:\n");
+	//	token = (readInput(stdin));
+	//}
+	//else 
+	//{
+	//	token = strtok(ex, ":=");
+	//	token = strtok(NULL, ",");
+	//}
 
-	int date = 0;        // Uses to store the parts of the date
-	int flag = 1;        // Simbolize if there is a problem with date format  
-	do
-	{
-		if (!flag)
-		{
-			printf("Invalid date, please enter date again\n");
-			token = (readInput(stdin));
-			if (!strcmp(token, "quit")) {
-				free(token);
-				free(temp->firstName);
-				free(temp->lastName);
-				free(temp->ID);
-				free(temp->phone);
-				free(temp);
-				return;
-			}
-		}
-		while (!validDate(&token)) {
-			printf("Invalid date, please enter date again\n");
-			token = (readInput(stdin));
-			if (!strcmp(token, "quit")) {
-				free(token);
-				free(temp->firstName);
-				free(temp->lastName);
-				free(temp->ID);
-				free(temp->phone);
-				free(temp);
-				return;
-			}
-		}
-		token = strtok(token, "/");
-		token = _strdup(token);
-		date = atoi(token);
-		free(token);
+	//int date = 0;        // Uses to store the parts of the date
+	//int flag = 1;        // Simbolize if there is a problem with date format  
+	//do
+	//{
+	//	if (!flag)
+	//	{
+	//		printf("Invalid date, please enter date again\n");
+	//		token = (readInput(stdin));
+	//		if (!strcmp(token, "quit")) {
+	//			free(token);
+	//			free(temp->firstName);
+	//			free(temp->lastName);
+	//			free(temp->ID);
+	//			free(temp->phone);
+	//			free(temp);
+	//			return;
+	//		}
+	//	}
+	//	while (!validDate(&token)) {
+	//		printf("Invalid date, please enter date again\n");
+	//		token = (readInput(stdin));
+	//		if (!strcmp(token, "quit")) {
+	//			free(token);
+	//			free(temp->firstName);
+	//			free(temp->lastName);
+	//			free(temp->ID);
+	//			free(temp->phone);
+	//			free(temp);
+	//			return;
+	//		}
+	//	}
+	//	token = strtok(token, "/");
+	//	token = _strdup(token);
+	//	date = atoi(token);
+	//	free(token);
 
-		if (date <= 31 && date > 0)
-			temp->dateOfDebt.day = date;
-		else flag = 0;
+	//	if (date <= 31 && date > 0)
+	//		temp->dateOfDebt.day = date;
+	//	else flag = 0;
 
-		token = strtok(NULL, "/");
-		token = _strdup(token);
-		date = atoi(token);
-		free(token);
+	//	token = strtok(NULL, "/");
+	//	token = _strdup(token);
+	//	date = atoi(token);
+	//	free(token);
 
-		if (date <= 12 && date > 0)
-			temp->dateOfDebt.month = date;
-		else flag = 0;
+	//	if (date <= 12 && date > 0)
+	//		temp->dateOfDebt.month = date;
+	//	else flag = 0;
 
-		token = strtok(NULL, "\n");
-		token = _strdup(token);
-		date = atoi(token);
-		free(token);
+	//	token = strtok(NULL, "\n");
+	//	token = _strdup(token);
+	//	date = atoi(token);
+	//	free(token);
 
-		if (date <= 2500 && date > 1000)
-			temp->dateOfDebt.year = date;
-		else flag = 0;
+	//	if (date <= 2500 && date > 1000)
+	//		temp->dateOfDebt.year = date;
+	//	else flag = 0;
 
-		temp->errors = 255;
-	} while (temp->dateOfDebt.day == 0 || temp->dateOfDebt.month == 0 || temp->dateOfDebt.year == 0);
+	//	temp->errors = 255;
+	//} while (temp->dateOfDebt.day == 0 || temp->dateOfDebt.month == 0 || temp->dateOfDebt.year == 0);
 
-	free(line);
+	//free(line);
+	isValidClient(temp);
 	struct client* search = checkForExistingID(clientsList, temp->ID);
 	if (search != NULL)
 	{
@@ -370,7 +441,11 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 			printToFile(fp, temp);                  // Print the record to the file.
 			freeClient(temp);
 		}
-		else addToSortedList(clientsList, temp);
+		else
+		{
+			addToSortedList(clientsList, temp);
+			printToFile(fp, temp);
+		}
 	}
 	printf("Record added succsesfuly\n");
 }
@@ -381,8 +456,8 @@ void selectQuery(struct list* clientsList, char* input)
 {
 	struct client* selectedClient = clientsList->head; // Using to rum over the list and compare the data that has been asked.
 	char* line = input;
-	char* param[6] = { "first name","last name","id","phone","debt","date" };
-	int(*validFunc[6])(char**) = { validName,validName,validID,validPhone,validNumber,validDate };
+	/*char* param[6] = { "first name","last name","id","phone","debt","date" };
+	int(*validFunc[6])(char**) = { validName,validName,validID,validPhone,validNumber,validDate };*/
 	int(*compFunc[6]) = { myStrCompare,myStrCompare ,myStrCompare ,myStrCompare, myFloatCompare ,dateCompare };
 	char* oper[4] = { "<",">","!=","=" };
 	int i = 0, j = 0;

@@ -31,7 +31,7 @@ struct client
 	char* phone;
 	float debt;
 	date dateOfDebt;
-	char errors;            // Array of 1 and 0 that symbolizes the validation of each field in the client in the order. the last index symbolizes error id and name not matching. 
+	char errors;            // Array of 1 and 0 that symbolizes the validation of each field in the client in that order. the last index symbolizes error id and name not matching. 
 	struct client* next;
 };
 
@@ -68,3 +68,4 @@ int dateCompare(char* token, void* selected);
 //	set first name = Mri el, last name = gilo, id = 147369852, phone = 0548754256, date = 11/9/2022, debt = -30e0
 //	set first name = Mri el, last name = gilo, id = 147369852, phone = 0548754256, date = 11/9/2022, debt = -300.52
 //	set first name = MrI El, last name = gilo, id = 147369852, phone = 0541111111, date = 11/9/2022, debt = -300
+//  set first name:Israel, last name:Israel, id:123456789, phone number: 0509676094, debt:123, date:20/12/23

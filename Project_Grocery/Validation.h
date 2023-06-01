@@ -5,10 +5,13 @@
 #include <ctype.h>
 
 
-int validName(char** name);
-int validID(char** ID);
-int validPhone(char** phone);
-int validNumber(char** number);
-int validDate(char** date);
+void isValidClient(struct client* clientToCheck);
+int validName(void* name_);
+int validID(void* ID_);
+int validPhone(void* phone_);
+int validNumber(void* number_);
+int validDate(void* date_);
+int validDateStruct(void* dateToCheck_);
+
 #endif
 

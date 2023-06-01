@@ -2,8 +2,9 @@
 #include "GeneralFunc.h"
 
 /*Function to check that the names contains letters only*/
-int validName(char** name)
+int validName(void* name_)
 {
+	char** name = (char**)name_;
 	*name = removeSpacesFromStr(name);  // Remove spaces before and after the name.
 
 	char* ch = *name;
@@ -19,8 +20,9 @@ int validName(char** name)
 }
 
 /*Function to check that the ID's contains 9 digits only*/
-int validID(char** ID)
+int validID(void* ID_)
 {
+	char** ID = (char**)ID_;
 	*ID = removeSpacesFromStr(ID);
 
 	char* ch = *ID;
@@ -43,8 +45,9 @@ int validID(char** ID)
 	else return 1;
 }
 /*Function to check that the Phone number contains 10 digits only and starts with 0*/
-int validPhone(char** phone)
+int validPhone(void* phone_)
 {
+	char** phone = (char**)phone_;
 	*phone = removeSpacesFromStr(phone);
 
 	char* ch = *phone;
@@ -72,8 +75,9 @@ int validPhone(char** phone)
 }
 
 /*Function to check that the debt contains digits only*/
-int validNumber(char** number)
+int validNumber(void* number_)
 {
+	char** number = (char**) number_;
 	*number = removeSpacesFromStr(number);
 
 	char* ch = *number;
@@ -99,8 +103,9 @@ int validNumber(char** number)
 }
 
 /*Function to check that the date is in the right format*/
-int validDate(char** date) {
+int validDate(void* date_) {
 
+	char** date = (char**)date_;
 	*date = removeSpacesFromStr(date);
 
 	char* ch = *date;
@@ -125,4 +130,42 @@ int validDate(char** date) {
 		}
 	}
 	return 1;
+}
+
+int validDateStruct(void* dateToCheck_)
+{
+	date* dateToCheck = (date*)dateToCheck_;
+	if ((dateToCheck->year > 0) && (dateToCheck->month > 0
+		&& dateToCheck->month <= 12) && (dateToCheck->day >= 1 && dateToCheck->day <= 31))
+		return 1;
+	return 0;
+}
+void isValidClient(struct client* clientToCheck)
+{
+	void* Client_param[] = { &clientToCheck->firstName, &clientToCheck->lastName, &clientToCheck->ID, &clientToCheck->phone, &clientToCheck->debt, &clientToCheck->dateOfDebt };
+	int(*validFunc[6])(void*) = { validName,validName,validID,validPhone,validNumber,validDateStruct };
+	int flag = 0;
+	int i = 0;
+	char retChar = '0';
+	while (i < 6)
+	{
+		if (i == 5)
+		{
+			/*char* date = NULL;
+			retChar = strcat(date, clientToCheck->dateOfDebt.day + '/');
+			retChar = strcat(date, clientToCheck->dateOfDebt.month + '/');
+			retChar = strcat(date, clientToCheck->dateOfDebt.year);
+			if (flag = validFunc[i]((char*)Client_param[i]))*/
+			if (validFunc[i](Client_param[i]))
+				clientToCheck->errors |= 1 << i;
+		}
+		else
+		{
+			(validFunc[i](Client_param[i]));
+			clientToCheck->errors |= 1 << i;
+		}
+		i++;
+	}
+	clientToCheck->errors |= 1 << 6;
+	clientToCheck->errors |= 1 << 7;
 }

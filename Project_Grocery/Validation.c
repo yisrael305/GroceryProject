@@ -142,15 +142,22 @@ int validDateStruct(void* dateToCheck_)
 }
 void isValidClient(struct client* clientToCheck)
 {
-	void* Client_param[] = { &clientToCheck->firstName, &clientToCheck->lastName, &clientToCheck->ID, &clientToCheck->phone, &clientToCheck->debt, &clientToCheck->dateOfDebt };
+	void* Client_param[] = { &clientToCheck->firstName, &clientToCheck->lastName, &clientToCheck->ID,
+		&clientToCheck->phone, &clientToCheck->debt, &clientToCheck->dateOfDebt };
 	int(*validFunc[6])(void*) = { validName,validName,validID,validPhone,validNumber,validDateStruct };
 	int flag = 0;
 	int i = 0;
 	char retChar = '0';
 	while (i < 6)
 	{
-		if (i == 5)
+		if (i == 4)
 		{
+
+			/*float* castDebtPtr = (float*)Client_param[i];
+			float castDebt = *castDebtPtr;
+			printf("%f\n", *((float*)Client_param[i]));
+			char floatToStr[20];
+			int numWritten = sprintf_s(floatToStr, sizeof(floatToStr), "%f", castDebt);*/
 			/*char* date = NULL;
 			retChar = strcat(date, clientToCheck->dateOfDebt.day + '/');
 			retChar = strcat(date, clientToCheck->dateOfDebt.month + '/');
@@ -169,3 +176,4 @@ void isValidClient(struct client* clientToCheck)
 	clientToCheck->errors |= 1 << 6;
 	clientToCheck->errors |= 1 << 7;
 }
+

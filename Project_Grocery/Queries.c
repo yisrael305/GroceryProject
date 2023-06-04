@@ -7,7 +7,7 @@
 #include "List.h"
 
 char* param[6] = { "first name","last name","id","phone","debt","date" };
-int(*validFunc[6])(char**) = { validName,validName,validID,validPhone,validNumber,validDate };
+int(*validFunc[6])(void*) = { validName,validName,validID,validPhone,validNumber,validDate };
 
 int getQuery(FILE* fp, struct list* clientsList) 
 {
@@ -92,13 +92,14 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 	line = _strdup(input);
 
 	struct client* temp = createClient();  // Asiggin memory for the new client.
-	char** Client_param[] = { &temp->firstName, &temp->lastName, &temp->ID, &temp->phone, &temp->debt, &temp->dateOfDebt };
+	void* Client_param[] = { &temp->firstName, &temp->lastName, &temp->ID, &temp->phone, &temp->debt, &temp->dateOfDebt };
 
 	char* token;                           // Uses to extract specific data from the line that scaned.  
 
 	int checkParam = 0;
 	char* paramPointer = NULL;
 	int validParam = 0;
+	int freeParam = 0;
 
 	//Extract the first name.
 	while (checkParam < 6)
@@ -112,36 +113,32 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 		}
 		else
 		{
-			token = strtok(paramPointer, ":=");
+			token = strtok(NULL, ":=");
 			token = strtok(NULL, ",");
 		}
 
-		if (checkParam == 5)
-			addDateToClient(&temp->dateOfDebt, token);
-		else if (checkParam == 4)
+		while (!(validParam = validFunc[checkParam](&token)))
 		{
-			temp->debt = (float)atof(token);
-		}
-		else
-		{
-			*(Client_param[checkParam]) = _strdup(token);
-		}
-
-		/*while (paramPointer == NULL)
-		{
-			printf("Looks like you forgot to enter the %s:\n", param[checkParam]);
-			paramPointer = readInput(stdin);
-
-			while (!(validParam = validFunc[checkParam](&paramPointer)))
+			if (token == "quit")
 			{
-				if (token == "quit")
-					exit(1);
-				else {
-					printf("The %s that you entered is not valid, Please try again", param[checkParam]);
-					token = readInput(stdin);
+				while (freeParam < checkParam)
+				{
+					free(Client_param[checkParam]);
 				}
 			}
-		}*/
+				
+			else {
+				printf("The %s that you entered is not valid, Please try again", param[checkParam]);
+				token = readInput(stdin);
+			}
+		}
+
+		if (checkParam == 4)
+			temp->debt = (float)atof(token);
+		else if (checkParam == 5)
+			addDateToClient(&temp->dateOfDebt, token);
+		else memcpy(Client_param[checkParam], &token, sizeof(token));
+		
 		line = _strdup(input);
 		checkParam++;
 	}
@@ -430,7 +427,7 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 	//} while (temp->dateOfDebt.day == 0 || temp->dateOfDebt.month == 0 || temp->dateOfDebt.year == 0);
 
 	//free(line);
-	isValidClient(temp);
+	//isValidClient(temp);
 	struct client* search = checkForExistingID(clientsList, temp->ID);
 	if (search != NULL)
 	{

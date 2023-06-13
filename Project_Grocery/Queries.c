@@ -6,8 +6,28 @@
 #include "MatchClient.h"
 #include "List.h"
 
+typedef enum {
+	SET = 1,
+	SELECT,
+	PRINT,
+	QUIT
+}queris;
+
 char* param[6] = { "first name","last name","id","phone","debt","date" };
 int(*validFunc[6])(void*) = { validName,validName,validID,validPhone,validNumber,validDate };
+
+int getQueryValue(char* token)
+{
+	token = removeSpacesFromStr(&token);
+	if (!strcmp(token, "set"))
+		return 1;
+	else if (!strcmp(token, "select"))
+		return 2;
+	else if (!strcmp(token, "print"))
+		return 3;
+	else if (!strcmp(token, "quit"))
+		return 4;
+}
 
 int getQuery(FILE* fp, struct list* clientsList) 
 {
@@ -16,15 +36,49 @@ int getQuery(FILE* fp, struct list* clientsList)
 	{
 		printf("\n-->");
 		query = readInput(stdin);
+		//char* queryChange = _strdup(query);
 		if ((*query == '\0'))
 		{
 			free(query);
+			//free(queryChange);
 		}
 		else
 		{
 			char* token = strtok(query, " ");
 
-			if (!strcmp(token, "set")) {
+			int queryValue = getQueryValue(token);
+
+			switch (queryValue)
+			{
+			case SET:
+
+				addToFile(query + 4, fp, clientsList);
+				break;
+
+			case SELECT:
+
+				selectQuery(clientsList, query + 7);
+				break;
+
+			case PRINT:
+
+				printList(clientsList);
+				break;
+			case QUIT:
+
+				printf("BYE BYE!!\n");
+				free(query);
+				//free(queryChange);
+				return 0;
+				break;
+
+			default:
+				printf("Invalid query. Please try again\n");
+				
+				break;
+			}
+			
+			/*if (!strcmp(token, "set")) {
 
 				addToFile(query + 4, fp, clientsList);
 				free(query);
@@ -53,10 +107,15 @@ int getQuery(FILE* fp, struct list* clientsList)
 				printf("Invalid query. Please try again\n");
 				free(query);
 				return 1;
-			}
+			}*/
 		}
+		printf("%s\n", query);
+		//printf("%s\n", queryChange);
 
-	} while (!(*query));
+		free(query);
+		//free(queryChange);
+		return 1;
+	} while ((*query) != "\0");
 }
 
 void addDateToClient(date* dateOfClient, char* dateToAdd)
@@ -83,7 +142,7 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 		line++;
 	}
 	line = _strdup(input);
-
+	char* linePtr = line;
 	struct client* temp = createClient();  // Asiggin memory for the new client.
 	void* Client_param[] = { &temp->firstName, &temp->lastName, &temp->ID, &temp->phone, &temp->debt, &temp->dateOfDebt };
 
@@ -133,10 +192,11 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 			addDateToClient(&temp->dateOfDebt, token);
 		else memcpy(Client_param[checkParam], &token, sizeof(token));
 		
-		line = _strdup(input);
+		//line = _strdup(input);
 		checkParam++;
 	}
-	
+
+	free(linePtr);
 	printToFile(fp, temp);
 
 	struct client* search = checkForExistingID(clientsList, temp->ID);
@@ -151,6 +211,7 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 		else addToSortedList(clientsList, temp);
 	}
 	printf("Record added succsesfuly\n");
+	
 }
 
 /*Function to allow the user to print a specific data from the list

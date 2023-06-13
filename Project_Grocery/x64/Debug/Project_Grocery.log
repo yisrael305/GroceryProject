@@ -1,1 +1,7 @@
-﻿  Project_Grocery.vcxproj -> C:\Users\ישראל\OneDrive\code\C\projects\GroceryProject\x64\Debug\Project_Grocery.exe
+﻿  Queries.c
+C:\Users\ישראל\OneDrive\code\C\projects\GroceryProject\Project_Grocery\Queries.c(118,27): warning C4047: '!=': 'int' differs in levels of indirection from 'char [2]'
+C:\Users\ישראל\OneDrive\code\C\projects\GroceryProject\Project_Grocery\Queries.c(262,58): warning C4047: 'function': 'int (__cdecl *)(char *,void *)' differs in levels of indirection from 'int *'
+C:\Users\ישראל\OneDrive\code\C\projects\GroceryProject\Project_Grocery\Queries.c(262,55): warning C4024: 'paramCompare': different types for formal and actual parameter 3
+C:\Users\ישראל\OneDrive\code\C\projects\GroceryProject\Project_Grocery\Queries.c(224,22): warning C4047: 'initializing': 'int *' differs in levels of indirection from 'int (__cdecl *)(char *,void *)'
+C:\Users\ישראל\OneDrive\code\C\projects\GroceryProject\Project_Grocery\Queries.c(30): warning C4715: 'getQueryValue': not all control paths return a value
+  Project_Grocery.vcxproj -> C:\Users\ישראל\OneDrive\code\C\projects\GroceryProject\x64\Debug\Project_Grocery.exe

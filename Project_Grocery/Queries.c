@@ -13,8 +13,8 @@ typedef enum {
 	QUIT
 }queris;
 
-char* param[6] = { "first name","last name","id","phone","debt","date" };
-int(*validFunc[6])(void*) = { validName,validName,validID,validPhone,validNumber,validDate };
+char* param[6] = { "first name","last name","id","phone","date","debt" };
+int(*validFunc[6])(void*) = { validName,validName,validID,validPhone,validDate,validNumber };
 
 int getQueryValue(char* token)
 {
@@ -51,21 +51,18 @@ int getQuery(FILE* fp, struct list* clientsList)
 			switch (queryValue)
 			{
 			case SET:
-
 				addToFile(query + 4, fp, clientsList);
 				break;
 
 			case SELECT:
-
 				selectQuery(clientsList, query + 7);
 				break;
 
 			case PRINT:
-
 				printList(clientsList);
 				break;
-			case QUIT:
 
+			case QUIT:
 				printf("BYE BYE!!\n");
 				free(query);
 				//free(queryChange);
@@ -74,60 +71,41 @@ int getQuery(FILE* fp, struct list* clientsList)
 
 			default:
 				printf("Invalid query. Please try again\n");
-				
 				break;
 			}
-			
-			/*if (!strcmp(token, "set")) {
-
-				addToFile(query + 4, fp, clientsList);
-				free(query);
-				return 1;
-			}
-			else if (!strcmp(token, "select"))
-			{
-				selectQuery(clientsList, query + 7);
-				free(query);
-				return 1;
-			}
-			else if (!strcmp(token, "print"))
-			{
-				printList(clientsList);
-				free(query);
-				return 1;
-			}
-			else if (!strcmp(token, "quit"))
-			{
-				printf("BYE BYE!!\n");
-				free(query);
-				return 0;
-			}
-			else
-			{
-				printf("Invalid query. Please try again\n");
-				free(query);
-				return 1;
-			}*/
 		}
-		printf("%s\n", query);
-		//printf("%s\n", queryChange);
-
 		free(query);
 		//free(queryChange);
 		return 1;
-	} while ((*query) != "\0");
+	} while ((*query) != '\0');
 }
 
 void addDateToClient(date* dateOfClient, char* dateToAdd)
 {
-	char* token = strtok(dateToAdd, "/");
+	char* token = _strdup(dateToAdd);
+	char* tokenPtr = token;
+
+	token = strtok(token, "/");
 	dateOfClient->day = atoi(token);
 	
 	token = strtok(NULL, "/");	
 	dateOfClient->month=atoi(token);
 
-	token = strtok(NULL, "/");
+	token = strtok(NULL, ",\n");
 	dateOfClient->year = atoi(token);
+
+	free(tokenPtr);
+}
+
+void addDebtToClient(void* clientToEdit, char* param)
+{
+	char* token = _strdup(param);
+	char* tokenPtr = token;
+	
+	float debt = atof(token);
+	*(float*)clientToEdit = debt;
+
+	free(tokenPtr);
 }
 
 /*Fnction to build a new client from input and add him to the list and file*/
@@ -144,32 +122,36 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 	line = _strdup(input);
 	char* linePtr = line;
 	struct client* temp = createClient();  // Asiggin memory for the new client.
-	void* Client_param[] = { &temp->firstName, &temp->lastName, &temp->ID, &temp->phone, &temp->debt, &temp->dateOfDebt };
+	void* Client_param[] = { &temp->firstName, &temp->lastName, &temp->ID, &temp->phone, &temp->dateOfDebt, &temp->debt };
 
-	char* token;                           // Uses to extract specific data from the line that scaned.  
+	char* token= NULL;                           // Uses to extract specific data from the line that scaned.  
 
 	int checkParam = 0;
 	char* paramPointer = NULL;
 	int validParam = 0;
 	int freeParam = 0;
-
+	char* strDate = NULL;
+	char* strField = NULL;
 	//Extract the first name.
 	while (checkParam < 6)
 	{
 		paramPointer = strstr(line, param[checkParam]);
+		paramPointer = strtok_r(paramPointer, ":=", &paramPointer);
+		paramPointer = strtok_r(paramPointer, ",\n",&paramPointer);
 
-		if (checkParam == 0)
+		/*if (checkParam == 0)
 		{
-			token = strtok(paramPointer, ":=");
-			token = strtok(NULL, ",");
+
+			paramPointer = strtok(paramPointer, ":=");
+			paramPointer = strtok(NULL, ",");
 		}
 		else
 		{
-			token = strtok(NULL, ":=");
-			token = strtok(NULL, ",");
-		}
+			paramPointer = strtok(NULL, ":=\n");
+			paramPointer = strtok(NULL, ",\n");
+		}*/
 
-		while (!(validParam = validFunc[checkParam](&token)))
+		while (!(validParam = validFunc[checkParam](&paramPointer)))
 		{
 			if (token == "quit")
 			{
@@ -178,24 +160,29 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 					free(Client_param[checkParam]);
 					freeParam++;
 				}
-			}
-				
+				return;
+			}				
 			else {
 				printf("The %s that you entered is not valid, Please try again", param[checkParam]);
-				token = readInput(stdin);
+				paramPointer = readInput(stdin);
 			}
 		}
 
 		if (checkParam == 4)
-			temp->debt = (float)atof(token);
+			strDate = _strdup(paramPointer);
 		else if (checkParam == 5)
-			addDateToClient(&temp->dateOfDebt, token);
-		else memcpy(Client_param[checkParam], &token, sizeof(token));
-		
-		//line = _strdup(input);
+			addDebtToClient(Client_param[checkParam], paramPointer);
+		else 
+		{
+			strField = _strdup(paramPointer);
+			memcpy(Client_param[checkParam], &strField, sizeof(strField));
+		}
+		line = _strdup(input);
 		checkParam++;
 	}
 
+	addDateToClient(&temp->dateOfDebt, strDate);
+	free(strDate);
 	free(linePtr);
 	printToFile(fp, temp);
 
@@ -208,10 +195,10 @@ void addToFile(char* input, FILE* fp, struct list* clientsList)
 			addToSortedList(clientsList, search);
 			//freeClient(temp);
 		}
-		else addToSortedList(clientsList, temp);
 	}
+	else addToSortedList(clientsList, temp);
+
 	printf("Record added succsesfuly\n");
-	
 }
 
 /*Function to allow the user to print a specific data from the list

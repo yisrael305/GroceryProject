@@ -9,4 +9,6 @@ void addToFile(char* input, FILE* fp, struct list* clientsList);
 void selectQuery(struct list* clientsList, char* param);
 int paramCompare(char* token, void* select, int compare(char*, void*));
 int getQueryValue(char* token);
+void addStrToClient(char* clientFieldToEdit, char* param);
+void addDateToClient(date* dateOfClient, char* dateToAdd);
 #endif

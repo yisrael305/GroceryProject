@@ -60,13 +60,13 @@ int dateCompare(char* token, void* selected);
 //	select first name = Mo3
 //	select date > 11/10/202e
 //
-//	set first name = Mri el, last name = gilo, id = 147369852, phone=0504587696, date = 11/9/2022, debt = -300
-//	set first name = Mri el, last name = gilo, id = 14769852, phone = 0548754256, date = 11/9/2022, debt = -300
-//	set first name = Mri el, last name = gilo, id = 1473693852, phone = 0548754256, date = 11/9/2022, debt = -300
-//	set first name = Mri el, last name = gilo@, id = 147369852, phone = 0548754256, date = 11/9/2022, debt = -300
-//	set first name = Mri el, last name = gilo, id = 147369852, phone = 0548754256, date = 11/9\2022, debt = -300
-//	set first name = Mri el, last name = gilo, id = 147369852, phone = 0548754256, date = 11/9/2022, debt = -30e0
-//	set first name = Mri el, last name = gilo, id = 147369852, phone = 0548754256, date = 11/9/2022, debt = -300.52
-//	set first name = MrI El, last name = gilo, id = 147369852, phone = 0541111111, date = 11/9/2022, debt = -300
+//	set first name = Mri el, last name = gilo, id = 147369852, phone=0504587696, date = 11/09/2022, debt = -300
+//	set first name = Mri el, last name = gilo, id = 14769852, phone = 0548754256, date = 11/09/2022, debt = -300
+//	set first name = Mri el, last name = gilo, id = 1473693852, phone = 0548754256, date = 11/09/2022, debt = -300
+//	set first name = Mri el, last name = gilo@, id = 147369852, phone = 0548754256, date = 11/09/2022, debt = -300
+//	set first name = Mri el, last name = gilo, id = 147369852, phone = 0548754256, date = 11/09\2022, debt = -300
+//	set first name = Mri el, last name = gilo, id = 147369852, phone = 0548754256, date = 11/09/2022, debt = -30e0
+//	set first name = Mri el, last name = gilo, id = 147369852, phone = 0548754256, date = 11/09/2022, debt = -300.52
+//	set first name = MrI El, last name = gilo, id = 147369852, phone = 0541111111, date = 11/09/2022, debt = -300
 //  set first name:Israel, last name:Israel, id:123456789, phone number: 0509676094, debt:123, date:20/12/23
 //  set first name : net, last name : shy, id : 058366771, phone number : 0509676094, debt:123, date : 20/12/23

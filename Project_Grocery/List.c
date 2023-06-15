@@ -10,12 +10,11 @@ void readFile(FILE* fp, struct list* listOfDebts)
 	char ch; // Uses to check if we past the EOF symbol.
 
 	int(*func[4])(char**) = { validName,validName,validID,validPhone };
-
+	
 	while ((ch = getc(fp)) != EOF)
 	{
 		char* line;
 		int i = 0;
-
 		fseek(fp, -1, SEEK_CUR);
 		line = readInput(fp);
 
